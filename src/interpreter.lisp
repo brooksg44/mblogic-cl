@@ -362,6 +362,14 @@
   "Set word value in interpreter's data table"
   (set-word (interpreter-data-table interp) address value))
 
+(defmethod get-float-value ((interp plc-interpreter) address)
+  "Get float value from interpreter's data table"
+  (get-float (interpreter-data-table interp) address))
+
+(defmethod set-float-value ((interp plc-interpreter) address value)
+  "Set float value in interpreter's data table"
+  (set-float (interpreter-data-table interp) address value))
+
 ;;; ============================================================
 ;;; Convenience Functions
 ;;; ============================================================

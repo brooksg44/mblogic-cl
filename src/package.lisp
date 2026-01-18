@@ -31,6 +31,8 @@
    #:instruction-validator
    #:instruction-min-params
    #:instruction-max-params
+   #:instruction-ladsymb
+   #:instruction-monitor
    #:make-instruction-set
    #:find-instruction
    #:validate-parameter
@@ -48,14 +50,34 @@
    #:make-il-parser
    #:parse-program
    #:parse-line
+   #:parse-il-string
+   #:parse-il-file
    #:parser-errors
    #:parser-networks
    #:parser-subroutines
    ;; Parsed program accessors
+   #:parsed-program
    #:program-errors
    #:program-warnings
    #:program-main-networks
    #:program-subroutines
+   ;; Parsed network accessors
+   #:parsed-network
+   #:network-number
+   #:network-instructions
+   #:network-comments
+   ;; Parsed instruction accessors
+   #:parsed-instruction
+   #:parsed-opcode
+   #:parsed-params
+   #:parsed-line-number
+   #:parsed-instruction-def
+   #:parsed-comment
+   ;; Parsed subroutine accessors
+   #:parsed-subroutine
+   #:subroutine-name
+   #:subroutine-networks
+   #:subroutine-line-number
    
    ;; Compiler exports
    #:il-compiler
@@ -82,7 +104,10 @@
    #:interpreter-call-stack
    #:interpreter-statistics
    #:interpreter-exit-code
+   #:interpreter-program
+   #:interpreter-data-table
    #:run-il-string
+   #:run-il-file
    #:test-program
    #:quick-test
    #:get-bool-value
@@ -95,6 +120,11 @@
    #:stats-min-scan-time
    #:stats-max-scan-time
    #:average-scan-time
+
+   ;; Compiled program exports
+   #:compiled-program
+   #:program-source
+   #:compile-il-file
    
    ;; Conditions
    #:plc-end-condition

@@ -22,6 +22,22 @@
                              (:file "interpreter"))))
   :in-order-to ((test-op (test-op #:mblogic-cl/test))))
 
+(asdf:defsystem #:mblogic-cl/web
+  :description "Web-based ladder diagram visualization for MBLogic-CL"
+  :author "Gregory Brooks"
+  :license "GPL-3.0"
+  :depends-on (#:mblogic-cl
+               #:hunchentoot
+               #:cl-json
+               #:bordeaux-threads)
+  :serial t
+  :components ((:module "src/web"
+                :serial t
+                :components ((:file "package")
+                             (:file "ladder-render")
+                             (:file "json-api")
+                             (:file "server")))))
+
 (asdf:defsystem #:mblogic-cl/test
   :description "Test suite for mblogic-cl"
   :author "Gregory Brooks"
@@ -36,6 +52,6 @@
                              (:file "test-parser")
                              (:file "test-compiler")
                              (:file "test-interpreter"))))
-  :perform (test-op (o c) (symbol-call :fiveam '#:run! 
-                                       (find-symbol* '#:all-tests 
+  :perform (test-op (o c) (symbol-call :fiveam '#:run!
+                                       (find-symbol* '#:all-tests
                                                      :mblogic-cl-test))))
