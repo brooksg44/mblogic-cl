@@ -46,7 +46,8 @@ OUT Y2
 
 ;; Test parsing the full sample program
 (format t "~%=== Full Sample Program Parse Test ===~%")
-(let* ((filepath "/home/brooksg44/quicklisp/local-projects/mblogic-cl/test/plcprog.txt")
+;;(let* ((filepath "/home/brooksg44/quicklisp/local-projects/mblogic-cl/test/plcprog.txt")
+(let* ((filepath "/Users/gregorybrooks/common-lisp/mblogic-cl/test/plcprog.txt")
        (result (parse-il-file filepath)))
 
   ;; Print summary

@@ -12,7 +12,7 @@
 
 (format t "~%=== Testing Interpreter with plcprog.txt ===~%")
 
-(let ((interp (run-il-file "test/plcprog.txt" :max-scans 10)))
+(let ((interp (run-il-file "/Users/gregorybrooks/common-lisp/mblogic-cl/test/plcprog.txt" :max-scans 10)))
   (print-interpreter-status interp)
   (format t "~%Selected outputs after 10 scans:~%")
   (format t "  Y1=~A~%" (get-bool-value interp "Y1"))
