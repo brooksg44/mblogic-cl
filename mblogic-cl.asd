@@ -55,3 +55,18 @@
   :perform (test-op (o c) (symbol-call :fiveam '#:run!
                                        (find-symbol* '#:all-tests
                                                      :mblogic-cl-test))))
+
+(asdf:defsystem #:mblogic-cl/web-test
+  :description "Test suite for mblogic-cl web visualization"
+  :author "Gregory Brooks"
+  :license "GPL-3.0"
+  :depends-on (#:mblogic-cl
+               #:mblogic-cl/web
+               #:mblogic-cl/test
+               #:fiveam)
+  :serial t
+  :components ((:module "test"
+                :components ((:file "test-ld-visualization"))))
+  :perform (test-op (o c) (symbol-call :fiveam '#:run!
+                                       (find-symbol* '#:ld-visualization-tests
+                                                     :mblogic-cl-test))))

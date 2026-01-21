@@ -583,9 +583,64 @@ cd ~/common-lisp/mblogic-cl
 - ✅ Performance: <1ms scan time for sample program (achieved: 0.05ms)
 - ✅ Code quality: Clean, documented, idiomatic Common Lisp
 
-## Future Enhancements (Post Phase 7)
-- Ladder diagram visualization (port PLClad2il.py)
-- Live debugging/monitoring
+## Phase 7+: Ladder Diagram Visualization (In Progress)
+**Goal**: Web-based ladder diagram visualization and live monitoring
+
+**Status**: ✅ Started
+
+**Files Implemented**:
+- `src/web/package.lisp` - Package definition for mblogic-cl-web
+- `src/web/ladder-render.lisp` - IL to ladder cell matrix conversion
+- `src/web/json-api.lisp` - JSON API response generation
+- `src/web/server.lisp` - Hunchentoot web server with REST API
+- `static/laddermonitor.html` - Main HTML page for ladder monitor
+- `static/css/ladder.css` - Ladder diagram styling
+
+**Additional Dependencies** (mblogic-cl/web system):
+- `hunchentoot` - HTTP server
+- `cl-json` - JSON serialization
+- `bordeaux-threads` - Multi-threading for PLC execution
+
+**Components Completed**:
+1. ✅ **Ladder Symbol Mapping** - Mapping from IL instruction :ladsymb to SVG symbols
+2. ✅ **Instruction Classification** - Functions to categorize instructions (contact, coil, block, etc.)
+3. ✅ **Address Extraction** - Extract monitorable addresses from instructions
+4. ✅ **Cell Conversion** - Convert parsed instructions to ladder cells
+5. ✅ **Network to Rung** - Convert parsed networks to ladder rung structures
+6. ✅ **Program Conversion** - Convert parsed programs to ladder diagram format
+7. ✅ **JSON Serialization** - Convert ladder structures to JSON for web API
+8. ✅ **Web Server** - Hunchentoot server with API endpoints
+9. ✅ **Static Files** - HTML, CSS for ladder monitor interface
+
+**API Endpoints**:
+- `GET /api/statistics` - PLC runtime statistics
+- `GET /api/data?addr=X1,Y1,...` - Read address values
+- `GET /api/program?subrname=main` - Get ladder diagram structure
+- `GET /api/subroutines` - List available subroutines
+- `POST /api/control/start` - Start continuous PLC execution
+- `POST /api/control/stop` - Stop PLC execution
+- `POST /api/control/step` - Single scan step
+
+**Testing**:
+- `test/test-ld-visualization.lisp` - Ladder visualization unit tests
+
+**Usage**:
+```lisp
+;; Quick start with IL program
+(ql:quickload :mblogic-cl/web)
+(mblogic-cl-web:quick-start "test/plcprog.txt" :port 8080)
+;; Open http://localhost:8080/laddermonitor.html
+```
+
+**Components Remaining**:
+- [ ] JavaScript files for dynamic ladder rendering (ladsymbols.js, ladsubrdisplib.js, ladmonitor.js, servercomm.js)
+- [ ] Live value monitoring updates
+- [ ] SVG symbol definitions
+- [ ] Branch visualization (parallel contacts)
+- [ ] Block instruction rendering (timers, counters, math)
+
+## Future Enhancements (Post Phase 7+)
+- Live debugging/monitoring completion
 - Persistent data table (save/restore state)
 - Network editor
 - Integration with I/O hardware

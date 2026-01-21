@@ -10,8 +10,10 @@
            #:interpreter-tests
            #:library-tests
            #:integration-tests
+           #:ld-visualization-tests
            #:run-tests
-           #:run-quick-tests))
+           #:run-quick-tests
+           #:run-web-tests))
 
 (in-package #:mblogic-cl-test)
 
@@ -138,5 +140,9 @@
 (defun run-performance-tests ()
   "Run performance benchmarks only"
   (run! 'performance-tests))
+
+(defun run-web-tests ()
+  "Run ladder diagram visualization tests only"
+  (run! 'ld-visualization-tests))
 
 ;;; End of test-suite.lisp
