@@ -11,16 +11,38 @@ const LadSymbols = (function() {
     const HEIGHT = 40;
     const CENTER_Y = HEIGHT / 2;
 
+    // Block dimensions (wider for instructions with parameters)
+    const BLOCK_WIDTH = 120;
+    const BLOCK_HEIGHT = 60;
+
     /**
      * Create an SVG wrapper with the given content
      * @param {string} content - SVG content
      * @param {string} stateClass - State class (MB_ladderoff or MB_ladderon)
+     * @param {number} width - SVG width (default: WIDTH)
+     * @param {number} height - SVG height (default: HEIGHT)
      * @returns {string} - Complete SVG element string
      */
-    function wrapSvg(content, stateClass = 'MB_ladderoff') {
-        return `<svg viewBox="0 0 ${WIDTH} ${HEIGHT}" class="ladder-symbol ${stateClass}">
+    function wrapSvg(content, stateClass = 'MB_ladderoff', width = WIDTH, height = HEIGHT) {
+        return `<svg viewBox="0 0 ${width} ${height}" class="ladder-symbol ${stateClass}">
             ${content}
         </svg>`;
+    }
+
+    /**
+     * Create a block instruction SVG
+     * @param {string} label - Block label (opcode)
+     * @param {string} stateClass - State class
+     * @returns {string} - SVG element string
+     */
+    function createBlockSvg(label, stateClass = 'MB_ladderoff') {
+        const centerY = BLOCK_HEIGHT / 2;
+        return wrapSvg(`
+            <line x1="0" y1="${centerY}" x2="10" y2="${centerY}" class="${stateClass}"/>
+            <rect x="10" y="5" width="100" height="50" class="${stateClass}" fill="none" rx="3" ry="3"/>
+            <text x="60" y="35" text-anchor="middle" font-size="11" font-weight="bold" class="${stateClass}">${label}</text>
+            <line x1="110" y1="${centerY}" x2="${BLOCK_WIDTH}" y2="${centerY}" class="${stateClass}"/>
+        `, stateClass, BLOCK_WIDTH, BLOCK_HEIGHT);
     }
 
     // Symbol definitions
@@ -78,7 +100,7 @@ const LadSymbols = (function() {
          */
         out: (stateClass) => wrapSvg(`
             <line x1="0" y1="${CENTER_Y}" x2="15" y2="${CENTER_Y}" class="${stateClass}"/>
-            <circle cx="30" cy="${CENTER_Y}" r="12" class="${stateClass}"/>
+            <circle cx="30" cy="${CENTER_Y}" r="12" class="${stateClass}" fill="none"/>
             <line x1="45" y1="${CENTER_Y}" x2="${WIDTH}" y2="${CENTER_Y}" class="${stateClass}"/>
         `, stateClass),
 
@@ -88,7 +110,7 @@ const LadSymbols = (function() {
          */
         set: (stateClass) => wrapSvg(`
             <line x1="0" y1="${CENTER_Y}" x2="15" y2="${CENTER_Y}" class="${stateClass}"/>
-            <circle cx="30" cy="${CENTER_Y}" r="12" class="${stateClass}"/>
+            <circle cx="30" cy="${CENTER_Y}" r="12" class="${stateClass}" fill="none"/>
             <text x="30" y="24" text-anchor="middle" font-size="10" font-weight="bold" class="${stateClass}">S</text>
             <line x1="45" y1="${CENTER_Y}" x2="${WIDTH}" y2="${CENTER_Y}" class="${stateClass}"/>
         `, stateClass),
@@ -99,7 +121,7 @@ const LadSymbols = (function() {
          */
         rst: (stateClass) => wrapSvg(`
             <line x1="0" y1="${CENTER_Y}" x2="15" y2="${CENTER_Y}" class="${stateClass}"/>
-            <circle cx="30" cy="${CENTER_Y}" r="12" class="${stateClass}"/>
+            <circle cx="30" cy="${CENTER_Y}" r="12" class="${stateClass}" fill="none"/>
             <text x="30" y="24" text-anchor="middle" font-size="10" font-weight="bold" class="${stateClass}">R</text>
             <line x1="45" y1="${CENTER_Y}" x2="${WIDTH}" y2="${CENTER_Y}" class="${stateClass}"/>
         `, stateClass),
@@ -110,7 +132,7 @@ const LadSymbols = (function() {
          */
         pd: (stateClass) => wrapSvg(`
             <line x1="0" y1="${CENTER_Y}" x2="15" y2="${CENTER_Y}" class="${stateClass}"/>
-            <circle cx="30" cy="${CENTER_Y}" r="12" class="${stateClass}"/>
+            <circle cx="30" cy="${CENTER_Y}" r="12" class="${stateClass}" fill="none"/>
             <text x="30" y="24" text-anchor="middle" font-size="10" font-weight="bold" class="${stateClass}">P</text>
             <line x1="45" y1="${CENTER_Y}" x2="${WIDTH}" y2="${CENTER_Y}" class="${stateClass}"/>
         `, stateClass),
@@ -119,12 +141,112 @@ const LadSymbols = (function() {
          * Comparison Block
          * --[CMP]--
          */
-        compare: (stateClass) => wrapSvg(`
-            <line x1="0" y1="${CENTER_Y}" x2="10" y2="${CENTER_Y}" class="${stateClass}"/>
-            <rect x="10" y="5" width="40" height="30" class="${stateClass}" fill="none"/>
-            <text x="30" y="24" text-anchor="middle" font-size="8" class="${stateClass}">CMP</text>
-            <line x1="50" y1="${CENTER_Y}" x2="${WIDTH}" y2="${CENTER_Y}" class="${stateClass}"/>
-        `, stateClass),
+        compare: (stateClass) => createBlockSvg('CMP', stateClass),
+
+        /**
+         * Timer On-Delay
+         */
+        tmr: (stateClass) => createBlockSvg('TMR', stateClass),
+
+        /**
+         * Timer Accumulating
+         */
+        tmra: (stateClass) => createBlockSvg('TMRA', stateClass),
+
+        /**
+         * Timer Off-Delay
+         */
+        tmroff: (stateClass) => createBlockSvg('TMROFF', stateClass),
+
+        /**
+         * Counter Up
+         */
+        cntu: (stateClass) => createBlockSvg('CNTU', stateClass),
+
+        /**
+         * Counter Down
+         */
+        cntd: (stateClass) => createBlockSvg('CNTD', stateClass),
+
+        /**
+         * Up/Down Counter
+         */
+        udc: (stateClass) => createBlockSvg('UDC', stateClass),
+
+        /**
+         * Copy instruction
+         */
+        copy: (stateClass) => createBlockSvg('COPY', stateClass),
+
+        /**
+         * Block Copy
+         */
+        cpyblk: (stateClass) => createBlockSvg('CPYBLK', stateClass),
+
+        /**
+         * Fill instruction
+         */
+        fill: (stateClass) => createBlockSvg('FILL', stateClass),
+
+        /**
+         * Pack bits
+         */
+        pack: (stateClass) => createBlockSvg('PACK', stateClass),
+
+        /**
+         * Unpack bits
+         */
+        unpack: (stateClass) => createBlockSvg('UNPACK', stateClass),
+
+        /**
+         * Shift Register
+         */
+        shfrg: (stateClass) => createBlockSvg('SHFRG', stateClass),
+
+        /**
+         * Find Equal
+         */
+        findeq: (stateClass) => createBlockSvg('FINDEQ', stateClass),
+
+        /**
+         * Math Decimal
+         */
+        mathdec: (stateClass) => createBlockSvg('MATH', stateClass),
+
+        /**
+         * Math Hex
+         */
+        mathhex: (stateClass) => createBlockSvg('MATHX', stateClass),
+
+        /**
+         * Sum
+         */
+        sum: (stateClass) => createBlockSvg('SUM', stateClass),
+
+        /**
+         * Subroutine Call
+         */
+        call: (stateClass) => createBlockSvg('CALL', stateClass),
+
+        /**
+         * Return
+         */
+        rt: (stateClass) => createBlockSvg('RT', stateClass),
+
+        /**
+         * End
+         */
+        end: (stateClass) => createBlockSvg('END', stateClass),
+
+        /**
+         * For Loop Start
+         */
+        for: (stateClass) => createBlockSvg('FOR', stateClass),
+
+        /**
+         * For Loop End (Next)
+         */
+        next: (stateClass) => createBlockSvg('NEXT', stateClass),
 
         /**
          * Horizontal line (for spacing/continuation)
@@ -151,33 +273,6 @@ const LadSymbols = (function() {
         `, stateClass)
     };
 
-    // Timer symbols (as blocks with different labels)
-    symbols.tmr = symbols.compare;
-    symbols.tmra = symbols.compare;
-    symbols.tmroff = symbols.compare;
-
-    // Counter symbols
-    symbols.cntu = symbols.compare;
-    symbols.cntd = symbols.compare;
-    symbols.udc = symbols.compare;
-
-    // Other block symbols
-    symbols.copy = symbols.compare;
-    symbols.cpyblk = symbols.compare;
-    symbols.fill = symbols.compare;
-    symbols.pack = symbols.compare;
-    symbols.unpack = symbols.compare;
-    symbols.shfrg = symbols.compare;
-    symbols.findeq = symbols.compare;
-    symbols.mathdec = symbols.compare;
-    symbols.mathhex = symbols.compare;
-    symbols.sum = symbols.compare;
-    symbols.call = symbols.compare;
-    symbols.rt = symbols.compare;
-    symbols.end = symbols.compare;
-    symbols.for = symbols.compare;
-    symbols.next = symbols.compare;
-
     /**
      * Get SVG for a symbol
      * @param {string} symbolName - Symbol name
@@ -197,11 +292,31 @@ const LadSymbols = (function() {
         return Object.keys(symbols);
     }
 
+    /**
+     * Check if a symbol is a block type (wider)
+     * @param {string} symbolName - Symbol name
+     * @returns {boolean}
+     */
+    function isBlockSymbol(symbolName) {
+        const blockSymbols = [
+            'compare', 'tmr', 'tmra', 'tmroff',
+            'cntu', 'cntd', 'udc',
+            'copy', 'cpyblk', 'fill',
+            'pack', 'unpack', 'shfrg',
+            'findeq', 'mathdec', 'mathhex', 'sum',
+            'call', 'rt', 'end', 'for', 'next'
+        ];
+        return blockSymbols.includes(symbolName);
+    }
+
     // Public API
     return {
         getSymbol,
         getSymbolNames,
+        isBlockSymbol,
         WIDTH,
-        HEIGHT
+        HEIGHT,
+        BLOCK_WIDTH,
+        BLOCK_HEIGHT
     };
 })();

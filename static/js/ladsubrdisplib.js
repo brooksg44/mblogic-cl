@@ -13,7 +13,8 @@ const SubrDispControl = (function() {
     // Cell dimensions for layout
     const CELL_WIDTH = 80;
     const CELL_HEIGHT = 60;
-    const BLOCK_WIDTH = 140;
+    const BLOCK_CELL_WIDTH = 140;
+    const BLOCK_CELL_HEIGHT = 80;
 
     /**
      * Set the current program data
@@ -35,6 +36,15 @@ const SubrDispControl = (function() {
     }
 
     /**
+     * Check if symbol represents a block instruction
+     * @param {string} symbol - Symbol name
+     * @returns {boolean}
+     */
+    function isBlockSymbol(symbol) {
+        return LadSymbols.isBlockSymbol(symbol);
+    }
+
+    /**
      * Create HTML for a single cell
      * @param {Object} cell - Cell data
      * @returns {string} - HTML string
@@ -46,64 +56,52 @@ const SubrDispControl = (function() {
         const opcode = cell.opcode || '';
         const params = cell.params || [];
         const cellType = cell.type || 'unknown';
-
-        // Determine cell class
-        let cellClass = 'ladder-cell';
-        if (cellType === 'block' || isBlockSymbol(symbol)) {
-            cellClass = 'ladder-block';
-        }
+        const isBlock = isBlockSymbol(symbol) || cellType === 'block';
 
         // Create unique ID for monitoring
         const cellId = `cell-${cell.row}-${cell.col}`;
+
+        // Determine cell class and dimensions
+        const cellClass = isBlock ? 'ladder-cell ladder-block-cell' : 'ladder-cell';
+        const cellStyle = isBlock ? `width: ${BLOCK_CELL_WIDTH}px; height: ${BLOCK_CELL_HEIGHT}px;` : '';
 
         // Get SVG symbol
         const svgHtml = LadSymbols.getSymbol(symbol, 'MB_ladderoff');
 
         // Create address display
-        const addressDisplay = address ?
-            `<span class="cell-address">${escapeHtml(address)}</span>` : '';
+        let addressDisplay = '';
+        if (address) {
+            addressDisplay = `<span class="cell-address">${escapeHtml(address)}</span>`;
+        } else if (addresses.length > 0) {
+            addressDisplay = `<span class="cell-address">${escapeHtml(addresses[0])}</span>`;
+        }
 
-        // For block types, show params
+        // For block types, show parameters below the symbol
         let paramsDisplay = '';
-        if (cellType === 'block' || isBlockSymbol(symbol)) {
-            const displayParams = params.slice(0, 3).join(' ');
-            paramsDisplay = `
-                <span class="block-title">${escapeHtml(opcode)}</span>
-                <span class="block-params">${escapeHtml(displayParams)}</span>
-            `;
+        if (isBlock && params.length > 0) {
+            const displayParams = params.slice(0, 4).join(' ');
+            paramsDisplay = `<span class="block-params">${escapeHtml(displayParams)}</span>`;
         }
 
         // Data attributes for monitoring
-        const dataAttrs = addresses.map(a => `data-addr-${a.replace(/[^a-zA-Z0-9]/g, '_')}="true"`).join(' ');
+        const dataAttrs = addresses.length > 0
+            ? `data-addresses="${escapeHtml(addresses.join(','))}"`
+            : '';
 
         return `
             <div id="${cellId}" class="${cellClass} MB_ladderoff"
-                 data-addresses="${escapeHtml(addresses.join(','))}"
+                 ${dataAttrs}
                  data-opcode="${escapeHtml(opcode)}"
-                 ${dataAttrs}>
-                ${isBlockSymbol(symbol) ? '' : svgHtml}
+                 data-symbol="${escapeHtml(symbol)}"
+                 style="${cellStyle}">
+                <div class="cell-symbol">
+                    ${svgHtml}
+                </div>
                 ${paramsDisplay}
                 ${addressDisplay}
-                <span class="cell-value" style="display:none;"></span>
+                <span class="cell-value"></span>
             </div>
         `;
-    }
-
-    /**
-     * Check if symbol represents a block instruction
-     * @param {string} symbol - Symbol name
-     * @returns {boolean}
-     */
-    function isBlockSymbol(symbol) {
-        const blockSymbols = [
-            'compare', 'tmr', 'tmra', 'tmroff',
-            'cntu', 'cntd', 'udc',
-            'copy', 'cpyblk', 'fill',
-            'pack', 'unpack', 'shfrg',
-            'findeq', 'mathdec', 'mathhex', 'sum',
-            'call', 'rt', 'end', 'for', 'next'
-        ];
-        return blockSymbols.includes(symbol);
     }
 
     /**
@@ -136,22 +134,13 @@ const SubrDispControl = (function() {
             // Sort by column
             rowCells.sort((a, b) => (a.col || 0) - (b.col || 0));
 
-            cellsHtml += `<div class="ladder-row" data-row="${row}">`;
-
-            // Add power rail on left
-            if (row === 0) {
-                cellsHtml += '<div class="power-rail left"></div>';
-            }
+            const rowClass = row === 0 ? 'ladder-row ladder-row-main' : 'ladder-row ladder-row-branch';
+            cellsHtml += `<div class="${rowClass}" data-row="${row}">`;
 
             // Render cells
             rowCells.forEach(cell => {
                 cellsHtml += createCellHtml(cell);
             });
-
-            // Add power rail on right (only for first row with coil)
-            if (row === 0) {
-                cellsHtml += '<div class="power-rail right"></div>';
-            }
 
             cellsHtml += '</div>';
         }
@@ -164,7 +153,9 @@ const SubrDispControl = (function() {
                     ${comment ? `<span class="rung-comment">${escapeHtml(comment)}</span>` : ''}
                 </div>
                 <div class="ladder-grid">
+                    <div class="power-rail left"></div>
                     ${cellsHtml}
+                    <div class="power-rail right"></div>
                 </div>
             </div>
         `;
@@ -183,7 +174,7 @@ const SubrDispControl = (function() {
                 <div class="no-program">
                     <h3>No Program Loaded</h3>
                     <p>Start the web server with a program:</p>
-                    <code>(mblogic-cl-web:start-web-server :port 8080 :interpreter *interp*)</code>
+                    <code>(mblogic-cl-web:quick-start "test/plcprog.txt" :port 8080)</code>
                 </div>
             `;
         }
@@ -223,7 +214,7 @@ const SubrDispControl = (function() {
      */
     function updateCellStates(dataValues) {
         // Find all cells with monitored addresses
-        document.querySelectorAll('.ladder-cell, .ladder-block').forEach(cell => {
+        document.querySelectorAll('.ladder-cell').forEach(cell => {
             const addressesStr = cell.getAttribute('data-addresses');
             if (!addressesStr) return;
 
@@ -248,21 +239,32 @@ const SubrDispControl = (function() {
                 }
             });
 
-            // Update CSS class
+            // Update CSS class on the cell
             cell.classList.remove('MB_ladderoff', 'MB_ladderon');
             cell.classList.add(isOn ? 'MB_ladderon' : 'MB_ladderoff');
 
-            // Update SVG elements inside
-            cell.querySelectorAll('.MB_ladderoff, .MB_ladderon').forEach(el => {
-                el.classList.remove('MB_ladderoff', 'MB_ladderon');
-                el.classList.add(isOn ? 'MB_ladderon' : 'MB_ladderoff');
-            });
+            // Update SVG elements inside - find the svg and update all elements with state classes
+            const svg = cell.querySelector('svg');
+            if (svg) {
+                svg.classList.remove('MB_ladderoff', 'MB_ladderon');
+                svg.classList.add(isOn ? 'MB_ladderon' : 'MB_ladderoff');
+
+                // Update all child elements (lines, circles, rects, text)
+                svg.querySelectorAll('line, circle, rect, text').forEach(el => {
+                    el.classList.remove('MB_ladderoff', 'MB_ladderon');
+                    el.classList.add(isOn ? 'MB_ladderon' : 'MB_ladderoff');
+                });
+            }
 
             // Update value display if applicable
             const valueEl = cell.querySelector('.cell-value');
-            if (valueEl && displayValue !== null) {
-                valueEl.textContent = formatValue(displayValue);
-                valueEl.style.display = 'block';
+            if (valueEl) {
+                if (displayValue !== null) {
+                    valueEl.textContent = formatValue(displayValue);
+                    valueEl.style.display = 'block';
+                } else {
+                    valueEl.style.display = 'none';
+                }
             }
         });
     }
@@ -300,6 +302,7 @@ const SubrDispControl = (function() {
         getMonitorAddresses,
         createRungList,
         renderToContainer,
-        updateCellStates
+        updateCellStates,
+        isBlockSymbol
     };
 })();

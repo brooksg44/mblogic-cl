@@ -632,12 +632,16 @@ cd ~/common-lisp/mblogic-cl
 ;; Open http://localhost:8080/laddermonitor.html
 ```
 
+**JavaScript Files** (static/js/):
+- `servercomm.js` - API communication module with fetch wrappers
+- `ladsymbols.js` - SVG symbol definitions for contacts, coils, blocks
+- `ladsubrdisplib.js` - Ladder rung rendering and cell state updates
+- `ladmonitor.js` - Main monitor with polling, button handlers, stats
+
 **Components Remaining**:
-- [ ] JavaScript files for dynamic ladder rendering (ladsymbols.js, ladsubrdisplib.js, ladmonitor.js, servercomm.js)
-- [ ] Live value monitoring updates
-- [ ] SVG symbol definitions
-- [ ] Branch visualization (parallel contacts)
-- [ ] Block instruction rendering (timers, counters, math)
+- [ ] Branch visualization (parallel contacts with vertical lines)
+- [ ] Enhanced block instruction rendering (parameter display in blocks)
+- [ ] Real-time value overlay on cells
 
 ## Future Enhancements (Post Phase 7+)
 - Live debugging/monitoring completion
