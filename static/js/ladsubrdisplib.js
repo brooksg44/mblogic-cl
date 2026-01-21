@@ -57,13 +57,14 @@ const SubrDispControl = (function() {
         const params = cell.params || [];
         const cellType = cell.type || 'unknown';
         const isBlock = isBlockSymbol(symbol) || cellType === 'block';
+        const row = cell.row || 0;
+        const col = cell.col || 0;
 
         // Create unique ID for monitoring
-        const cellId = `cell-${cell.row}-${cell.col}`;
+        const cellId = `cell-${row}-${col}`;
 
         // Determine cell class and dimensions
         const cellClass = isBlock ? 'ladder-cell ladder-block-cell' : 'ladder-cell';
-        const cellStyle = isBlock ? `width: ${BLOCK_CELL_WIDTH}px; height: ${BLOCK_CELL_HEIGHT}px;` : '';
 
         // Get SVG symbol
         const svgHtml = LadSymbols.getSymbol(symbol, 'MB_ladderoff');
@@ -93,7 +94,8 @@ const SubrDispControl = (function() {
                  ${dataAttrs}
                  data-opcode="${escapeHtml(opcode)}"
                  data-symbol="${escapeHtml(symbol)}"
-                 style="${cellStyle}">
+                 data-row="${row}"
+                 data-col="${col}">
                 <div class="cell-symbol">
                     ${svgHtml}
                 </div>
@@ -105,7 +107,34 @@ const SubrDispControl = (function() {
     }
 
     /**
-     * Create HTML for a single rung
+     * Create an empty spacer cell for alignment
+     * @param {number} row - Row index
+     * @param {number} col - Column index
+     * @returns {string} - HTML string
+     */
+    function createSpacerHtml(row, col) {
+        return `<div class="ladder-spacer" data-row="${row}" data-col="${col}">
+            ${LadSymbols.getSymbol('hline', 'MB_ladderoff')}
+        </div>`;
+    }
+
+    /**
+     * Create a vertical branch connector
+     * @param {number} col - Column where branch connects
+     * @param {number} startRow - Start row (usually 0)
+     * @param {number} endRow - End row
+     * @returns {string} - HTML string
+     */
+    function createBranchConnector(col, startRow, endRow) {
+        return `<div class="branch-connector"
+                     data-col="${col}"
+                     data-start-row="${startRow}"
+                     data-end-row="${endRow}"
+                     style="--col: ${col}; --start-row: ${startRow}; --end-row: ${endRow};"></div>`;
+    }
+
+    /**
+     * Create HTML for a single rung with proper branch handling
      * @param {Object} rung - Rung data
      * @returns {string} - HTML string
      */
@@ -114,47 +143,92 @@ const SubrDispControl = (function() {
         const cells = rung.cells || [];
         const comment = rung.comment || '';
         const rows = rung.rows || 1;
+        const cols = rung.cols || 1;
 
-        // Create cells HTML
-        let cellsHtml = '';
+        // Build a 2D grid of cells
+        const grid = [];
+        for (let r = 0; r < rows; r++) {
+            grid[r] = new Array(cols).fill(null);
+        }
 
-        // Group cells by row
-        const cellsByRow = {};
+        // Place cells in grid and track branch points
+        const branchCols = new Set();
         cells.forEach(cell => {
             const row = cell.row || 0;
-            if (!cellsByRow[row]) {
-                cellsByRow[row] = [];
+            const col = cell.col || 0;
+            if (row < rows && col < cols) {
+                grid[row][col] = cell;
+                // Track columns where branches occur (non-zero rows)
+                if (row > 0) {
+                    branchCols.add(col);
+                }
             }
-            cellsByRow[row].push(cell);
         });
 
-        // Render each row
-        for (let row = 0; row < rows; row++) {
-            const rowCells = cellsByRow[row] || [];
-            // Sort by column
-            rowCells.sort((a, b) => (a.col || 0) - (b.col || 0));
+        // Render rows
+        let rowsHtml = '';
+        for (let r = 0; r < rows; r++) {
+            const rowClass = r === 0 ? 'ladder-row ladder-row-main' : 'ladder-row ladder-row-branch';
+            let rowCellsHtml = '';
 
-            const rowClass = row === 0 ? 'ladder-row ladder-row-main' : 'ladder-row ladder-row-branch';
-            cellsHtml += `<div class="${rowClass}" data-row="${row}">`;
+            for (let c = 0; c < cols; c++) {
+                const cell = grid[r][c];
+                if (cell) {
+                    rowCellsHtml += createCellHtml(cell);
+                } else if (r === 0) {
+                    // Main row: empty cells get horizontal lines
+                    rowCellsHtml += createSpacerHtml(r, c);
+                } else {
+                    // Branch row: only show spacer if there's content later in this row
+                    // or if this column has a branch that needs vertical connection
+                    let hasLaterContent = false;
+                    for (let cc = c + 1; cc < cols; cc++) {
+                        if (grid[r][cc]) {
+                            hasLaterContent = true;
+                            break;
+                        }
+                    }
+                    if (hasLaterContent || branchCols.has(c)) {
+                        rowCellsHtml += createSpacerHtml(r, c);
+                    } else {
+                        // Empty placeholder to maintain grid
+                        rowCellsHtml += `<div class="ladder-empty" data-row="${r}" data-col="${c}"></div>`;
+                    }
+                }
+            }
 
-            // Render cells
-            rowCells.forEach(cell => {
-                cellsHtml += createCellHtml(cell);
-            });
-
-            cellsHtml += '</div>';
+            rowsHtml += `<div class="${rowClass}" data-row="${r}">${rowCellsHtml}</div>`;
         }
+
+        // Create branch connectors (vertical lines)
+        let connectorsHtml = '';
+        branchCols.forEach(col => {
+            // Find the range of rows that have cells at this column
+            let minRow = 0;
+            let maxRow = 0;
+            for (let r = 0; r < rows; r++) {
+                if (grid[r][col]) {
+                    maxRow = r;
+                }
+            }
+            if (maxRow > minRow) {
+                connectorsHtml += createBranchConnector(col, minRow, maxRow);
+            }
+        });
 
         // Build complete rung HTML
         return `
-            <div class="ladder-rung" id="rung-${rungNum}" data-rungnum="${rungNum}">
+            <div class="ladder-rung" id="rung-${rungNum}" data-rungnum="${rungNum}" data-rows="${rows}" data-cols="${cols}">
                 <div class="rung-header">
                     <span class="rung-number">Network ${rungNum}</span>
                     ${comment ? `<span class="rung-comment">${escapeHtml(comment)}</span>` : ''}
                 </div>
-                <div class="ladder-grid">
+                <div class="ladder-grid" style="--cols: ${cols}; --rows: ${rows};">
                     <div class="power-rail left"></div>
-                    ${cellsHtml}
+                    <div class="ladder-content">
+                        ${rowsHtml}
+                        ${connectorsHtml}
+                    </div>
                     <div class="power-rail right"></div>
                 </div>
             </div>

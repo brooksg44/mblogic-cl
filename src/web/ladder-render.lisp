@@ -245,35 +245,38 @@
 
     ;; Process each instruction
     (dolist (instr instructions)
-      (let* ((opcode (mblogic-cl:parsed-opcode instr))
-             (cell (instruction-to-cell instr col)))
-
-        ;; Track addresses for monitoring
-        (dolist (addr (ladder-cell-addresses cell))
-          (pushnew addr all-addresses :test #'string-equal))
+      (let* ((opcode (mblogic-cl:parsed-opcode instr)))
 
         (cond
-          ;; OR starts a new branch row
+          ;; OR starts a new branch row - goes back to branch point
           ((and (branch-start-p opcode) (not (zerop col)))
            (incf max-row)
            (setf current-row max-row)
+           ;; Push the current column as the merge point, branch starts at column 0
            (push col branches)
-           (setf (ladder-cell-row cell) current-row)
-           (push cell cells)
-           (incf col))
+           ;; Create cell at the start of branch (column 0)
+           (let ((cell (instruction-to-cell instr 0)))
+             (setf (ladder-cell-row cell) current-row)
+             (dolist (addr (ladder-cell-addresses cell))
+               (pushnew addr all-addresses :test #'string-equal))
+             (push cell cells)))
 
-          ;; ANDSTR/ORSTR ends branches
+          ;; ANDSTR/ORSTR ends branches - merge back to main row
           ((branch-end-p opcode)
            (setf current-row 0)
+           ;; Pop the merge point column
            (when branches (pop branches))
            ;; Don't add a cell for branch-end, it's structural
            )
 
           ;; Regular instruction
           (t
-           (setf (ladder-cell-row cell) current-row)
-           (push cell cells)
-           (incf col)))))
+           (let ((cell (instruction-to-cell instr col)))
+             (setf (ladder-cell-row cell) current-row)
+             (dolist (addr (ladder-cell-addresses cell))
+               (pushnew addr all-addresses :test #'string-equal))
+             (push cell cells)
+             (incf col))))))
 
     ;; Build the rung
     (make-ladder-rung
